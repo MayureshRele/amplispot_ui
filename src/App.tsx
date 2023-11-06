@@ -1,14 +1,16 @@
 import { ChangeEvent, FormEvent, useState } from "react";
+import { toast } from "react-toastify";
 import "./App.css";
 import testImg from "./assets/pic.jpeg";
 type FormData = {
-  full_name: string;
-  last_name: string;
+  first_Name: string;
+  last_Name: string;
   profile_pic: File;
 };
 function App() {
   const [formDetails, setFormDetails] = useState<FormData>({} as FormData);
   const [file, setFile] = useState<string>("");
+  const [uploadedFile, setUploadedFile] = useState<string>("");
   const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = event.target;
     if (files) {
@@ -24,10 +26,31 @@ function App() {
       [name]: value,
     });
   };
-  const handleForm = (event: FormEvent<HTMLFormElement>) => {
+  const handleForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (formDetails) {
-      console.log(formDetails);
+      try {
+        const formData = new FormData();
+        formData.append("first_Name", formDetails.first_Name);
+        formData.append("last_Name", formDetails.last_Name);
+        formData.append("profile_pic", formDetails.profile_pic);
+
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URI}/create-image`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const { file } = await response.json();
+        setUploadedFile(file);
+        toast.success("Data Added Succesfully");
+      } catch (error) {
+        toast.error(error ?? "Data Added Failed");
+      }
     }
   };
   return (
@@ -41,27 +64,27 @@ function App() {
                 <form onSubmit={handleForm}>
                   <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 md:grid-cols-5">
                     <div className="md:col-span-5">
-                      <label htmlFor="full_name">Full Name</label>
+                      <label htmlFor="first_Name">Full Name</label>
                       <input
                         onChange={handleInput}
                         type="text"
-                        name="full_name"
-                        id="full_name"
+                        name="first_Name"
+                        id="first_Name"
                         required
                         className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                        value={formDetails.full_name}
+                        value={formDetails.first_Name}
                       />
                     </div>
                     <div className="md:col-span-5">
-                      <label htmlFor="last_name">Last Name</label>
+                      <label htmlFor="last_Name">Last Name</label>
                       <input
                         onChange={handleInput}
                         type="text"
-                        name="last_name"
-                        id="last_name"
+                        name="last_Name"
+                        id="last_Name"
                         required
                         className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                        value={formDetails.last_name}
+                        value={formDetails.last_Name}
                       />
                     </div>
                     <div className="md:col-span-5">
@@ -84,6 +107,18 @@ function App() {
                           Submit
                         </button>
                       </div>
+                      {uploadedFile && (
+                        <div className="inline-flex items-end mx-5">
+                          <a
+                            href={uploadedFile}
+                            target="_blank"
+                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            type="submit"
+                          >
+                            Preview
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </form>
@@ -94,25 +129,6 @@ function App() {
                 </div>
               )}
             </div>
-            {/* {formDetails && (
-              <div className="border-2 rounded-sm shadow-sm m-3 p-2">
-                <div className="profilePic relative">
-                  <img
-                    src={file}
-                    alt="profilePic"
-                    className=" w-[135px] h-[135px] top-[41px] left-[291px] absolute rounded-2xl"
-                  />
-                </div>
-
-                <img src={testImg} alt="testImg" className="" />
-                <div className="relative">
-                  <div className="absolute bottom-[35px] left-[386px] text-2xl capitalize font-semibold">
-                    {formDetails && formDetails.full_name}{" "}
-                    {formDetails && formDetails.last_name}
-                  </div>
-                </div>
-              </div>
-            )} */}
           </div>
         </div>
       </div>
